@@ -199,11 +199,15 @@ export function StartRoundScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      scrollRef.current?.scrollTo({
-        x: 0,
-        y: 0,
-        animated: false,
-      });
+      const scrollView = scrollRef.current;
+
+      if (scrollView && typeof scrollView.scrollTo === 'function') {
+        scrollView.scrollTo({
+          x: 0,
+          y: 0,
+          animated: false,
+        });
+      }
     }, []),
   );
 
