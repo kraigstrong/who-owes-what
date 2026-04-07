@@ -29,3 +29,18 @@ export function getCommittedHoles(round: Round): HoleResult[] {
 
   return touchedHoles.slice(0, -1);
 }
+
+export function getResumeHoleNumber(round: Round): number {
+  const committedHoles = getCommittedHoles(round);
+
+  if (committedHoles.length === 0) {
+    return 1;
+  }
+
+  const highestCommittedHoleNumber = committedHoles.reduce(
+    (highestHoleNumber, hole) => Math.max(highestHoleNumber, hole.holeNumber),
+    0,
+  );
+
+  return Math.min(round.holeCount, highestCommittedHoleNumber + 1);
+}

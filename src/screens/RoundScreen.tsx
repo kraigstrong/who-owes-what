@@ -20,6 +20,7 @@ import {
   formatTeeDisplayName,
   selectDefaultTee,
 } from '@/domain/course';
+import { getResumeHoleNumber } from '@/domain/roundProgress';
 import { getRoundSideLabel } from '@/domain/sideLabels';
 import { getRoundTrackingFlags } from '@/domain/tracking';
 import type { ContestType, WolfGameConfig } from '@/domain/round';
@@ -83,6 +84,14 @@ export function RoundScreen() {
   const updateHoleGamePoints = useAppStore((state) => state.updateHoleGamePoints);
 
   const [holeNumber, setHoleNumber] = useState(1);
+
+  useEffect(() => {
+    if (!round) {
+      return;
+    }
+
+    setHoleNumber(getResumeHoleNumber(round));
+  }, [round?.id]);
 
   if (!round) {
     return (
