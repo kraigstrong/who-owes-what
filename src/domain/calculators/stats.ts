@@ -22,6 +22,24 @@ export function rankPlayerTotals(
   }));
 }
 
+export function formatLeaderText(tallies: PlayerTally[], label: string): string {
+  if (tallies.length === 0) {
+    return `No ${label} data yet`;
+  }
+
+  const leaders = tallies.filter((entry) => entry.isLeader);
+
+  if (leaders.length === tallies.length) {
+    return `${label} tied`;
+  }
+
+  if (leaders.length > 1) {
+    return `${leaders.map((entry) => entry.label).join(', ')} lead ${label}`;
+  }
+
+  return `${leaders[0]?.label ?? 'No one'} leads ${label}`;
+}
+
 export function calculatePuttTotals(
   players: Player[],
   holes: HoleResult[],
@@ -39,24 +57,6 @@ export function calculatePuttTotals(
   }
 
   return rankPlayerTotals(players, totalsByPlayerId);
-}
-
-function formatLeaderText(tallies: PlayerTally[], label: string): string {
-  if (tallies.length === 0) {
-    return `No ${label} data yet`;
-  }
-
-  const leaders = tallies.filter((entry) => entry.isLeader);
-
-  if (leaders.length === tallies.length) {
-    return `${label.toUpperCase()} tied`;
-  }
-
-  if (leaders.length > 1) {
-    return `${leaders.map((entry) => entry.label).join(', ')} lead ${label.toUpperCase()}`;
-  }
-
-  return `${leaders[0]?.label ?? 'No one'} leads ${label.toUpperCase()}`;
 }
 
 export function calculateTrackedBooleanTotals(
@@ -126,6 +126,6 @@ export function calculateContestTallies(
     contestType,
     title: getContestTitle(contestType),
     totals,
-    leaderText: formatLeaderText(totals, getContestTitle(contestType)),
+    leaderText: formatLeaderText(totals, getContestTitle(contestType).toUpperCase()),
   };
 }

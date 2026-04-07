@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware.js';
 
 import { refreshManagedSelectedCourse } from '@/data/course/managedCatalog';
 import { getSetupNetScoringAvailability } from '@/domain/calculators/handicap';
@@ -30,6 +29,7 @@ import {
   seedHoleGamePoints,
   seedHolePlayerMetric,
 } from '@/state/roundStateHelpers';
+import { createJSONStorage, persist } from '@/state/zustandMiddleware';
 import { createId } from '@/utils/id';
 
 interface AppState {
@@ -89,6 +89,25 @@ interface AppState {
 
 const MAX_RECENT_COURSES = 6;
 
+function requiresFirGirTracking(selectedGames: GameType[]): boolean {
+  return selectedGames.includes('fir-gir');
+}
+
+function applyRequiredTrackingFlags<T extends Pick<SetupDraft, 'selectedGames' | 'trackPutts' | 'trackGir' | 'trackFir'>>(
+  draft: T,
+): T {
+  if (!requiresFirGirTracking(draft.selectedGames)) {
+    return draft;
+  }
+
+  return {
+    ...draft,
+    trackPutts: true,
+    trackGir: true,
+    trackFir: true,
+  };
+}
+
 function fillPlayerTeeIds(
   playerCount: 2 | 4,
   teeId: string | undefined,
@@ -121,14 +140,14 @@ function coerceDraftScoringMode(draft: SetupDraft): ScoringMode {
 
 function getSupportedGames(playerCount: 2 | 4, useTeams: boolean): GameType[] {
   if (playerCount === 2) {
-    return ['match-play', 'nassau'];
+    return ['match-play', 'nassau', 'fir-gir'];
   }
 
   if (useTeams) {
-    return ['match-play', 'nassau', 'wolf'];
+    return ['match-play', 'nassau', 'wolf', 'fir-gir'];
   }
 
-  return ['wolf'];
+  return ['wolf', 'fir-gir'];
 }
 
 function buildSides(setupDraft: SetupDraft) {
@@ -212,14 +231,22 @@ function buildActiveGames(selectedGames: GameType[], players: Player[], setupDra
       return games;
     }
 
-    if (players.length === 4) {
+    if (gameType === 'wolf' && players.length === 4) {
       games.push({
         id: createId('wolf'),
         type: 'wolf' as const,
         title: 'Wolf',
         rotationOrderPlayerIds: resolveWolfRotationPlayerIds(players, setupDraft),
       });
+
+      return games;
     }
+
+    games.push({
+      id: createId('fir-gir'),
+      type: 'fir-gir' as const,
+      title: 'FIR/GIR',
+    });
 
     return games;
   }, []);
@@ -278,23 +305,19 @@ export const useAppStore = create<AppState>()(
                 ? fillPlayerTeeIds(nextPlayerCount, getDefaultTeeId(nextSelectedCourse))
                 : normalizePlayerTeeIds(nextPlayerCount, state.setupDraft.playerTeeIds)
               : patch.playerTeeIds ?? state.setupDraft.playerTeeIds;
+          const normalizedDraft = applyRequiredTrackingFlags({
+            ...state.setupDraft,
+            ...patch,
+            selectedGames,
+            selectedCourse: nextSelectedCourse,
+            sameTeeForAll: nextSameTeeForAll,
+            playerTeeIds: nextPlayerTeeIds,
+          });
 
           return {
             setupDraft: {
-              ...state.setupDraft,
-              ...patch,
-              selectedGames,
-              selectedCourse: nextSelectedCourse,
-              sameTeeForAll: nextSameTeeForAll,
-              playerTeeIds: nextPlayerTeeIds,
-              scoringMode: coerceDraftScoringMode({
-                ...state.setupDraft,
-                ...patch,
-                selectedGames,
-                selectedCourse: nextSelectedCourse,
-                sameTeeForAll: nextSameTeeForAll,
-                playerTeeIds: nextPlayerTeeIds,
-              }),
+              ...normalizedDraft,
+              scoringMode: coerceDraftScoringMode(normalizedDraft),
             },
           };
         }),
@@ -407,15 +430,15 @@ export const useAppStore = create<AppState>()(
           const selectedGames = state.setupDraft.selectedGames.includes(gameType)
             ? state.setupDraft.selectedGames.filter((value) => value !== gameType)
             : [...state.setupDraft.selectedGames, gameType];
+          const normalizedDraft = applyRequiredTrackingFlags({
+            ...state.setupDraft,
+            selectedGames,
+          });
 
           return {
             setupDraft: {
-              ...state.setupDraft,
-              selectedGames,
-              scoringMode: coerceDraftScoringMode({
-                ...state.setupDraft,
-                selectedGames,
-              }),
+              ...normalizedDraft,
+              scoringMode: coerceDraftScoringMode(normalizedDraft),
             },
           };
         }),
@@ -500,6 +523,7 @@ export const useAppStore = create<AppState>()(
         );
         const selectedCourse = refreshManagedSelectedCourse(setupDraft.selectedCourse);
         const defaultTeeId = getDefaultTeeId(selectedCourse);
+        const normalizedDraft = applyRequiredTrackingFlags(setupDraft);
         const round: Round = {
           id: createId('round'),
           name:
@@ -523,14 +547,14 @@ export const useAppStore = create<AppState>()(
             createEmptyHoleResult(index + 1, players),
           ),
           activeGames: buildActiveGames(
-            setupDraft.selectedGames.filter((game) => supportedGames.includes(game)),
+            normalizedDraft.selectedGames.filter((game) => supportedGames.includes(game)),
             players,
-            setupDraft,
+            normalizedDraft,
           ),
           activeContests: setupDraft.selectedContests,
-          trackPutts: setupDraft.trackPutts,
-          trackGir: setupDraft.trackGir,
-          trackFir: setupDraft.trackFir,
+          trackPutts: normalizedDraft.trackPutts,
+          trackGir: normalizedDraft.trackGir,
+          trackFir: normalizedDraft.trackFir,
           scoringMode: getSetupNetScoringAvailability(setupDraft).eligible
             ? setupDraft.scoringMode
             : 'gross',

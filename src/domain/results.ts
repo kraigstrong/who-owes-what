@@ -59,6 +59,20 @@ export interface WolfResult {
   holeStates: WolfHoleState[];
 }
 
+export interface FirGirHoleState {
+  holeNumber: number;
+  pointsByPlayerId: Record<PlayerId, number>;
+}
+
+export interface FirGirResult {
+  kind: 'fir-gir';
+  gameId: GameId;
+  title: string;
+  totals: PlayerTally[];
+  leaderText: string;
+  holeStates: FirGirHoleState[];
+}
+
 export interface ContestResult {
   kind: 'contest';
   contestType: ContestType;
@@ -68,7 +82,7 @@ export interface ContestResult {
 }
 
 export interface DerivedRoundState {
-  games: Array<MatchPlayResult | NassauResult | WolfResult>;
+  games: Array<MatchPlayResult | NassauResult | WolfResult | FirGirResult>;
   contests: ContestResult[];
   settlementLines: string[];
 }

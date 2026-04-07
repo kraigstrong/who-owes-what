@@ -1,5 +1,6 @@
 import type { DerivedRoundState } from '@/domain/results';
-import type { MatchPlayResult, NassauResult, WolfResult } from '@/domain/results';
+import type { FirGirResult, MatchPlayResult, NassauResult, WolfResult } from '@/domain/results';
+import { deriveFirGirResult } from '@/domain/calculators/firGirPoints';
 import type { ContestType, Round } from '@/domain/round';
 import { calculateMatchSegment } from '@/domain/calculators/matchSegments';
 import { deriveWolfResult } from '@/domain/calculators/manualPoints';
@@ -31,6 +32,10 @@ function buildSettlementLines(
     if (game.kind === 'wolf') {
       lines.push(`${game.title}: ${game.leaderText}`);
     }
+
+    if (game.kind === 'fir-gir') {
+      lines.push(`${game.title}: ${game.leaderText}`);
+    }
   }
 
   for (const contest of derived.contests) {
@@ -45,7 +50,7 @@ export function deriveRoundState(round: Round): DerivedRoundState {
     ...round,
     holes: getCommittedHoles(round),
   };
-  const games = round.activeGames.reduce<Array<MatchPlayResult | NassauResult | WolfResult>>(
+  const games = round.activeGames.reduce<Array<MatchPlayResult | NassauResult | WolfResult | FirGirResult>>(
     (accumulator, game) => {
     if (game.type === 'match-play') {
       const segment = calculateMatchSegment(scoringRound, {
@@ -103,6 +108,10 @@ export function deriveRoundState(round: Round): DerivedRoundState {
 
     if (game.type === 'wolf') {
       accumulator.push(deriveWolfResult(scoringRound, game));
+    }
+
+    if (game.type === 'fir-gir') {
+      accumulator.push(deriveFirGirResult(scoringRound, game));
     }
 
       return accumulator;

@@ -6,7 +6,7 @@ export type RoundId = string;
 export type GameId = string;
 export type ScoringMode = 'gross' | 'net';
 
-export type GameType = 'match-play' | 'nassau' | 'wolf';
+export type GameType = 'match-play' | 'nassau' | 'wolf' | 'fir-gir';
 export type ContestType = 'kp' | 'longest-putt' | 'longest-drive';
 
 export interface Player {
@@ -75,6 +75,12 @@ export interface WolfGameConfig {
   rotationOrderPlayerIds: PlayerId[];
 }
 
+export interface FirGirGameConfig {
+  id: GameId;
+  type: 'fir-gir';
+  title: string;
+}
+
 export interface LegacyStatGameConfig {
   id: GameId;
   type: 'gir' | 'fir';
@@ -85,6 +91,7 @@ export type GameConfig =
   | MatchPlayGameConfig
   | NassauGameConfig
   | WolfGameConfig
+  | FirGirGameConfig
   | LegacyStatGameConfig;
 
 export interface Round {

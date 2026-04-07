@@ -3,6 +3,7 @@ import type { ExpoConfig } from 'expo/config';
 const config: ExpoConfig = {
   name: 'Who Owes What',
   slug: 'who-owes-what',
+  scheme: 'whooweswhat',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',

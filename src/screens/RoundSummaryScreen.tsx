@@ -172,9 +172,12 @@ function ScorecardRow({
 }) {
   return (
     <View style={styles.scorecardRow}>
-      <View style={styles.scorecardHoles}>
+        <View style={styles.scorecardHoles}>
         {holes.map((hole, index) => (
-          <View key={`${player.id}-${hole?.holeNumber ?? index}`} style={styles.scorecardCell}>
+          <View
+            key={`scorecard-cell-${player.id}-${index}-${hole?.holeNumber ?? 'empty'}`}
+            style={styles.scorecardCell}
+          >
             <Text style={styles.scorecardHoleLabel}>{hole?.holeNumber ?? index + 1}</Text>
             {renderScoreValue(round, player, hole, mode, handicapContext)}
           </View>
@@ -236,8 +239,8 @@ export function RoundSummaryScreen() {
         <Text style={styles.sectionTitle}>
           Settlement snapshot (through {committedHoles.length})
         </Text>
-        {derived.settlementLines.map((line) => (
-          <Text key={line} style={styles.lineItem}>
+        {derived.settlementLines.map((line, index) => (
+          <Text key={`settlement-${index}-${line}`} style={styles.lineItem}>
             {line}
           </Text>
         ))}
@@ -260,7 +263,18 @@ export function RoundSummaryScreen() {
             <>
               <Text style={styles.lineItem}>{game.leaderText}</Text>
               {game.totals.map((entry) => (
-                <Text key={entry.playerId} style={styles.lineItem}>
+                <Text key={`wolf-${game.gameId}-${entry.playerId}`} style={styles.lineItem}>
+                  {entry.label}: {entry.total}
+                </Text>
+              ))}
+            </>
+          ) : null}
+          {game.kind === 'fir-gir' ? (
+            <>
+              <Text style={styles.lineItem}>{game.leaderText}</Text>
+              <Text style={styles.helperText}>5 for FIR+GIR, 4 for FIR or GIR, minus putts, floor 0</Text>
+              {game.totals.map((entry) => (
+                <Text key={`fir-gir-${game.gameId}-${entry.playerId}`} style={styles.lineItem}>
                   {entry.label}: {entry.total}
                 </Text>
               ))}
@@ -273,7 +287,7 @@ export function RoundSummaryScreen() {
         <Card key={contest.contestType}>
           <Text style={styles.sectionTitle}>{contest.title}</Text>
           {contest.totals.map((entry) => (
-            <Text key={entry.playerId} style={styles.lineItem}>
+            <Text key={`contest-${contest.contestType}-${entry.playerId}`} style={styles.lineItem}>
               {entry.label}: {entry.total}
             </Text>
           ))}
@@ -284,7 +298,7 @@ export function RoundSummaryScreen() {
         <Card>
           <Text style={styles.sectionTitle}>GIR</Text>
           {girTotals.map((entry) => (
-            <Text key={entry.playerId} style={styles.lineItem}>
+            <Text key={`gir-${entry.playerId}`} style={styles.lineItem}>
               {entry.label}: {entry.total}
             </Text>
           ))}
@@ -295,7 +309,7 @@ export function RoundSummaryScreen() {
         <Card>
           <Text style={styles.sectionTitle}>FIR</Text>
           {firTotals.map((entry) => (
-            <Text key={entry.playerId} style={styles.lineItem}>
+            <Text key={`fir-${entry.playerId}`} style={styles.lineItem}>
               {entry.label}: {entry.total}
             </Text>
           ))}
@@ -306,7 +320,7 @@ export function RoundSummaryScreen() {
         <Card>
           <Text style={styles.sectionTitle}>Putts</Text>
           {puttTotals.map((entry) => (
-            <Text key={entry.playerId} style={styles.lineItem}>
+            <Text key={`putts-${entry.playerId}`} style={styles.lineItem}>
               {entry.label}: {entry.total}
             </Text>
           ))}

@@ -1,4 +1,5 @@
 import { deriveRoundState } from '@/domain/calculators';
+import { deriveFirGirResult, getFirGirHolePoints } from '@/domain/calculators/firGirPoints';
 import {
   calculateManualPointsTotals,
   getWolfPlayerIdForHole,
@@ -289,6 +290,49 @@ function buildNetTeamRound(): Round {
   return round;
 }
 
+function buildFirGirRound(): Round {
+  const players = [
+    { id: 'alice', name: 'Alice', sideId: 'side-a' },
+    { id: 'bob', name: 'Bob', sideId: 'side-b' },
+  ];
+
+  const round: Round = {
+    id: 'round-fir-gir',
+    name: 'FIR/GIR round',
+    createdAt: '2026-04-06T00:00:00.000Z',
+    players,
+    sides: [
+      { id: 'side-a', label: 'Alice', playerIds: ['alice'] },
+      { id: 'side-b', label: 'Bob', playerIds: ['bob'] },
+    ],
+    holeCount: 18,
+    holes: Array.from({ length: 18 }, (_, index) => createEmptyHoleResult(index + 1, players)),
+    activeGames: [
+      { id: 'fir-gir-1', type: 'fir-gir', title: 'FIR/GIR' },
+    ],
+    activeContests: [],
+    trackPutts: true,
+    trackGir: true,
+    trackFir: true,
+    scoringMode: 'gross',
+    playerTeeIds: {},
+    status: 'in-progress',
+  };
+
+  round.holes[0].playerResults = {
+    alice: { fir: true, gir: false, putts: 2 },
+    bob: { fir: true, gir: true, putts: 2 },
+  };
+  round.holes[0].isCommitted = true;
+  round.holes[1].playerResults = {
+    alice: { fir: false, gir: false, putts: 2 },
+    bob: { fir: false, gir: true, putts: 5 },
+  };
+  round.holes[1].isCommitted = true;
+
+  return round;
+}
+
 describe('deriveRoundState', () => {
   it('computes match play, Nassau, and contests from shared hole data', () => {
     const derived = deriveRoundState(buildRound());
@@ -468,5 +512,46 @@ describe('deriveRoundState', () => {
 
     expect(matchPlay?.segment.statusText).toBe('Casey / Drew 1 up');
     expect(nassau?.segments[0]?.statusText).toBe('Casey / Drew 1 up');
+  });
+
+  it('derives FIR/GIR totals with putt deductions floored at zero', () => {
+    const derived = deriveRoundState(buildFirGirRound());
+    const firGir = derived.games.find((game) => game.kind === 'fir-gir');
+
+    expect(firGir?.leaderText).toBe('Bob leads FIR/GIR');
+    expect(firGir?.totals.map((entry) => [entry.label, entry.total])).toEqual([
+      ['Bob', 3],
+      ['Alice', 2],
+    ]);
+    expect(derived.settlementLines).toContain('FIR/GIR: Bob leads FIR/GIR');
+  });
+
+  it('recomputes FIR/GIR totals after editing a prior hole', () => {
+    const round = buildFirGirRound();
+    round.holes[0].playerResults.alice = { fir: true, gir: true, putts: 1 };
+
+    const firGir = deriveRoundState(round).games.find((game) => game.kind === 'fir-gir');
+
+    expect(firGir?.totals.map((entry) => [entry.label, entry.total])).toEqual([
+      ['Alice', 4],
+      ['Bob', 3],
+    ]);
+  });
+});
+
+describe('getFirGirHolePoints', () => {
+  it('scores FIR/GIR holes with a minimum of zero', () => {
+    expect(getFirGirHolePoints({ fir: true, putts: 2 })).toBe(2);
+    expect(getFirGirHolePoints({ gir: true, putts: 2 })).toBe(2);
+    expect(getFirGirHolePoints({ fir: true, gir: true, putts: 2 })).toBe(3);
+    expect(getFirGirHolePoints({ fir: false, gir: false, putts: 2 })).toBe(0);
+    expect(getFirGirHolePoints({ fir: true, gir: false, putts: 5 })).toBe(0);
+  });
+
+  it('can derive totals directly from the FIR/GIR calculator', () => {
+    const round = buildFirGirRound();
+    const result = deriveFirGirResult(round, round.activeGames[0] as Extract<Round['activeGames'][number], { type: 'fir-gir' }>);
+
+    expect(result.totals[0]).toMatchObject({ label: 'Bob', total: 3 });
   });
 });

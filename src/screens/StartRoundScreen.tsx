@@ -27,6 +27,7 @@ const GAME_OPTIONS: Array<{ type: GameType; label: string }> = [
   { type: 'match-play', label: 'Match Play' },
   { type: 'nassau', label: 'Nassau' },
   { type: 'wolf', label: 'Wolf' },
+  { type: 'fir-gir', label: 'FIR/GIR' },
 ];
 
 const CONTEST_OPTIONS: Array<{ type: ContestType; label: string }> = [
@@ -172,6 +173,7 @@ export function StartRoundScreen() {
     setupDraft.useTeams,
   );
   const wolfSelected = effectiveSelectedGames.includes('wolf');
+  const firGirSelected = effectiveSelectedGames.includes('fir-gir');
   const wolfRotationIndexes = getWolfRotationIndexes(
     setupDraft.playerCount,
     setupDraft.wolfRotationPlayerIndexes ?? [],
@@ -591,7 +593,8 @@ export function StartRoundScreen() {
         <View style={styles.wrapRow}>
           <Chip
             label="Putts"
-            selected={setupDraft.trackPutts}
+            selected={setupDraft.trackPutts || firGirSelected}
+            disabled={firGirSelected}
             onPress={() =>
               updateSetupDraft({
                 trackPutts: !setupDraft.trackPutts,
@@ -600,7 +603,8 @@ export function StartRoundScreen() {
           />
           <Chip
             label="GIR"
-            selected={setupDraft.trackGir}
+            selected={setupDraft.trackGir || firGirSelected}
+            disabled={firGirSelected}
             onPress={() =>
               updateSetupDraft({
                 trackGir: !setupDraft.trackGir,
@@ -609,7 +613,8 @@ export function StartRoundScreen() {
           />
           <Chip
             label="FIR"
-            selected={setupDraft.trackFir}
+            selected={setupDraft.trackFir || firGirSelected}
+            disabled={firGirSelected}
             onPress={() =>
               updateSetupDraft({
                 trackFir: !setupDraft.trackFir,
@@ -617,6 +622,11 @@ export function StartRoundScreen() {
             }
           />
         </View>
+        {firGirSelected ? (
+          <Text style={styles.helperText}>
+            FIR/GIR requires FIR, GIR, and putts tracking.
+          </Text>
+        ) : null}
       </Card>
 
       <Button

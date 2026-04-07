@@ -33,4 +33,26 @@ describe('useAppStore round retention', () => {
     expect(rounds.find((round) => round.id === firstRound.id)?.status).toBe('complete');
     expect(rounds.find((round) => round.id === secondRound.id)?.status).toBe('in-progress');
   });
+
+  it('forces FIR, GIR, and putts tracking when FIR/GIR is selected', () => {
+    useAppStore.getState().toggleDraftGame('fir-gir');
+
+    const draft = useAppStore.getState().setupDraft;
+
+    expect(draft.selectedGames).toContain('fir-gir');
+    expect(draft.trackPutts).toBe(true);
+    expect(draft.trackGir).toBe(true);
+    expect(draft.trackFir).toBe(true);
+  });
+
+  it('persists required FIR/GIR tracking on the created round', () => {
+    useAppStore.getState().toggleDraftGame('fir-gir');
+
+    const round = useAppStore.getState().createRoundFromDraft();
+
+    expect(round.activeGames.some((game) => game.type === 'fir-gir')).toBe(true);
+    expect(round.trackPutts).toBe(true);
+    expect(round.trackGir).toBe(true);
+    expect(round.trackFir).toBe(true);
+  });
 });
