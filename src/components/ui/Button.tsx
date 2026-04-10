@@ -30,6 +30,7 @@ export function Button({
       ]}
     >
       <Text
+        selectable={false}
         style={[
           styles.label,
           variant === 'primary' ? styles.primaryLabel : styles.secondaryLabel,
@@ -66,6 +67,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '700',
+    userSelect: 'none',
   },
   primaryLabel: {
     color: '#f8f5ee',
